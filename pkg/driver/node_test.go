@@ -304,6 +304,19 @@ func TestNodePublishVolume(t *testing.T) {
 			mountSuccess:  true,
 		},
 		{
+			name: "success: normal with volume context populated from dynamic provisioning",
+			req: &csi.NodePublishVolumeRequest{
+				VolumeId:         volumeId,
+				VolumeCapability: stdVolCap,
+				TargetPath:       targetPath,
+				VolumeContext: map[string]string{"storage.kubernetes.io/csiprovisioneridentity": "efs.csi.aws.com",
+					"mounttargetip": "127.0.0.1"},
+			},
+			expectMakeDir: true,
+			mountArgs:     []interface{}{volumeId + ":/", targetPath, "efs", []string{"mounttargetip=127.0.0.1", "tls"}},
+			mountSuccess:  true,
+		},
+		{
 			name: "fail: conflicting access point in volume handle and mount options",
 			req: &csi.NodePublishVolumeRequest{
 				VolumeId: volumeId + "::" + accessPointID,
@@ -379,7 +392,7 @@ func TestNodePublishVolume(t *testing.T) {
 			expectMakeDir: false,
 			expectError: errtyp{
 				code:    "InvalidArgument",
-				message: "Volume capability not supported",
+				message: "Volume capability not supported: invalid access mode: SINGLE_NODE_READER_ONLY",
 			},
 		},
 		{
@@ -399,7 +412,7 @@ func TestNodePublishVolume(t *testing.T) {
 			expectMakeDir: false,
 			expectError: errtyp{
 				code:    "InvalidArgument",
-				message: "Volume capability access type must be mount",
+				message: "Volume capability not supported: only filesystem volumes are supported",
 			},
 		},
 		{

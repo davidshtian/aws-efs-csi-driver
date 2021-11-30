@@ -1,5 +1,41 @@
 # Helm chart
 
+# v2.2.0
+* Allow health ports to be configured
+* Add Missing "patch" permission for "events"
+
+# v2.1.6
+* Bump app/driver version to `v1.3.4`
+
+# v2.1.5
+* Bump app/driver version to `v1.3.3`
+
+# v2.1.4
+* Add node.serviceAccount values for creating and/or specifying daemonset service account
+
+# v2.1.3
+* Bump app/driver version to `v1.3.2` 
+
+# v2.1.2
+* Add extra-create-metadata
+
+# v2.1.1
+* Update app/driver version to `v1.3.1`
+
+# v2.1.0
+
+## New features
+* Update app/driver version to `v1.3.0`
+
+## Bug fixes
+* Put comments back in place inside the values file ([#475](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/475), [@pierluigilenoci](https://github.com/pierluigilenoci))
+
+# v2.0.1
+
+## Bug fixes
+* Helm chart: fix reclaimPolicy and volumeBindingMode ([#464](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/464), [@devinsmith911](https://github.com/devinsmith911))
+
+
 # v2.0.0
 
 ## Breaking changes

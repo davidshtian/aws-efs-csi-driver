@@ -33,6 +33,138 @@ func TestCreateVolume(t *testing.T) {
 		testFunc func(t *testing.T)
 	}{
 		{
+			name: "Success: Using fixed UID/GID",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						BasePath:         "test",
+						Uid:              "1000",
+						Gid:              "1001",
+					},
+				}
+
+				ctx := context.Background()
+				fileSystem := &cloud.FileSystem{
+					FileSystemId: fsId,
+				}
+				accessPoint := &cloud.AccessPoint{
+					AccessPointId: apId,
+					FileSystemId:  fsId,
+				}
+				mockCloud.EXPECT().DescribeFileSystem(gomock.Eq(ctx), gomock.Any()).Return(fileSystem, nil)
+				mockCloud.EXPECT().CreateAccessPoint(gomock.Eq(ctx), gomock.Any(), gomock.Any()).Return(accessPoint, nil).
+					Do(func(ctx context.Context, volumeName string, accessPointOpts *cloud.AccessPointOptions) {
+						if accessPointOpts.Uid != 1000 {
+							t.Fatalf("Uid mimatched. Expected: %v, actual: %v", accessPointOpts.Uid, 1000)
+						}
+						if accessPointOpts.Gid != 1001 {
+							t.Fatalf("Gid mimatched. Expected: %v, actual: %v", accessPointOpts.Uid, 1001)
+						}
+					})
+
+				res, err := driver.CreateVolume(ctx, req)
+
+				if err != nil {
+					t.Fatalf("CreateVolume failed: %v", err)
+				}
+
+				if res.Volume == nil {
+					t.Fatal("Volume is nil")
+				}
+
+				if res.Volume.VolumeId != volumeId {
+					t.Fatalf("Volume Id mismatched. Expected: %v, Actual: %v", volumeId, res.Volume.VolumeId)
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Success: Using fixed UID/GID and GID range",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						BasePath:         "test",
+						GidMin:           "5000",
+						GidMax:           "10000",
+						Uid:              "1000",
+						Gid:              "1001",
+					},
+				}
+
+				ctx := context.Background()
+				fileSystem := &cloud.FileSystem{
+					FileSystemId: fsId,
+				}
+				accessPoint := &cloud.AccessPoint{
+					AccessPointId: apId,
+					FileSystemId:  fsId,
+				}
+				mockCloud.EXPECT().DescribeFileSystem(gomock.Eq(ctx), gomock.Any()).Return(fileSystem, nil)
+				mockCloud.EXPECT().CreateAccessPoint(gomock.Eq(ctx), gomock.Any(), gomock.Any()).Return(accessPoint, nil).
+					Do(func(ctx context.Context, volumeName string, accessPointOpts *cloud.AccessPointOptions) {
+						if accessPointOpts.Uid != 1000 {
+							t.Fatalf("Uid mimatched. Expected: %v, actual: %v", accessPointOpts.Uid, 1000)
+						}
+						if accessPointOpts.Gid != 1001 {
+							t.Fatalf("Gid mimatched. Expected: %v, actual: %v", accessPointOpts.Uid, 1001)
+						}
+					})
+
+				res, err := driver.CreateVolume(ctx, req)
+
+				if err != nil {
+					t.Fatalf("CreateVolume failed: %v", err)
+				}
+
+				if res.Volume == nil {
+					t.Fatal("Volume is nil")
+				}
+
+				if res.Volume.VolumeId != volumeId {
+					t.Fatalf("Volume Id mismatched. Expected: %v, Actual: %v", volumeId, res.Volume.VolumeId)
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
 			name: "Success: Normal flow",
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
@@ -59,6 +191,7 @@ func TestCreateVolume(t *testing.T) {
 						GidMin:           "1000",
 						GidMax:           "2000",
 						DirectoryPerms:   "777",
+						AzName:           "us-east-1a",
 					},
 				}
 
@@ -390,6 +523,48 @@ func TestCreateVolume(t *testing.T) {
 			},
 		},
 		{
+			name: "Fail: AccessType is block",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					VolumeCapabilities: []*csi.VolumeCapability{
+						{
+							AccessType: &csi.VolumeCapability_Block{
+								Block: &csi.VolumeCapability_BlockVolume{},
+							},
+							AccessMode: &csi.VolumeCapability_AccessMode{
+								Mode: csi.VolumeCapability_AccessMode_MULTI_NODE_MULTI_WRITER,
+							},
+						},
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+					},
+				}
+
+				ctx := context.Background()
+				_, err := driver.CreateVolume(ctx, req)
+				if err == nil {
+					t.Fatal("CreateVolume did not fail")
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
 			name: "Fail: Provisioning Mode Not Supported",
 			testFunc: func(t *testing.T) {
 				mockCtl := gomock.NewController(t)
@@ -516,6 +691,150 @@ func TestCreateVolume(t *testing.T) {
 						ProvisioningMode: "efs-ap",
 						FsId:             "     ",
 						DirectoryPerms:   "777",
+					},
+				}
+
+				ctx := context.Background()
+				_, err := driver.CreateVolume(ctx, req)
+				if err == nil {
+					t.Fatal("CreateVolume did not fail")
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Fail: Uid invalid",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						Uid:              "invalid",
+					},
+				}
+
+				ctx := context.Background()
+				_, err := driver.CreateVolume(ctx, req)
+				if err == nil {
+					t.Fatal("CreateVolume did not fail")
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Fail: Uid cannot be negative",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						Uid:              "-5",
+					},
+				}
+
+				ctx := context.Background()
+				_, err := driver.CreateVolume(ctx, req)
+				if err == nil {
+					t.Fatal("CreateVolume did not fail")
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Fail: Gid invalid",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						Gid:              "invalid",
+					},
+				}
+
+				ctx := context.Background()
+				_, err := driver.CreateVolume(ctx, req)
+				if err == nil {
+					t.Fatal("CreateVolume did not fail")
+				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Fail: Gid cannot be negative",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+				}
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						DirectoryPerms:   "777",
+						Gid:              "-5",
 					},
 				}
 
@@ -995,6 +1314,52 @@ func TestCreateVolume(t *testing.T) {
 				mockCtl.Finish()
 			},
 		},
+		{
+			name: "Fail: Cannot assume role for x-account",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+					tags:         parseTagsFromStr(""),
+				}
+
+				secrets := map[string]string{}
+				secrets["awsRoleArn"] = "arn:aws:iam::1234567890:role/EFSCrossAccountRole"
+
+				req := &csi.CreateVolumeRequest{
+					Name: volumeName,
+					VolumeCapabilities: []*csi.VolumeCapability{
+						stdVolCap,
+					},
+					CapacityRange: &csi.CapacityRange{
+						RequiredBytes: capacityRange,
+					},
+					Parameters: map[string]string{
+						ProvisioningMode: "efs-ap",
+						FsId:             fsId,
+						GidMin:           "1000",
+						GidMax:           "2000",
+						DirectoryPerms:   "777",
+						AzName:           "us-east-1a",
+					},
+					Secrets: secrets,
+				}
+
+				ctx := context.Background()
+
+				_, err := driver.CreateVolume(ctx, req)
+
+				if err == nil {
+					t.Fatalf("CreateVolume did not fail")
+				}
+
+				mockCtl.Finish()
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -1369,6 +1734,38 @@ func TestDeleteVolume(t *testing.T) {
 				if err == nil {
 					t.Fatal("DeleteVolume did not fail")
 				}
+				mockCtl.Finish()
+			},
+		},
+		{
+			name: "Fail: Cannot assume role for x-account",
+			testFunc: func(t *testing.T) {
+				mockCtl := gomock.NewController(t)
+				mockCloud := mocks.NewMockCloud(mockCtl)
+
+				driver := &Driver{
+					endpoint:     endpoint,
+					cloud:        mockCloud,
+					gidAllocator: NewGidAllocator(),
+					tags:         parseTagsFromStr(""),
+				}
+
+				secrets := map[string]string{}
+				secrets["awsRoleArn"] = "arn:aws:iam::1234567890:role/EFSCrossAccountRole"
+
+				req := &csi.DeleteVolumeRequest{
+					VolumeId: volumeId,
+					Secrets:  secrets,
+				}
+
+				ctx := context.Background()
+
+				_, err := driver.DeleteVolume(ctx, req)
+
+				if err == nil {
+					t.Fatalf("DeleteVolume did not fail")
+				}
+
 				mockCtl.Finish()
 			},
 		},

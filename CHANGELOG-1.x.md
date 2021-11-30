@@ -1,3 +1,72 @@
+# v1.3.4
+
+### Bug Fixes
+* Only reap zombie stunnel processes ([#514](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/514), [@wongma7](https://github.com/wongma7))
+
+# v1.3.3
+
+### Misc.
+* Fast-forward to latest ebs hack/e2e scripts with eksctl support, k8s 1.20, etc. ([#510](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/510), [@wongma7](https://github.com/wongma7))
+* Add node/daemonset service account to helm chart ([#512](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/512), [@wongma7](https://github.com/wongma7))
+* Fix (and format) log collector script ([#525](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/525), [@wongma7](https://github.com/wongma7))
+* Fix node-serviceaccount.yaml missing from kustomize ([#527](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/527), [@wongma7](https://github.com/wongma7))
+
+# v1.3.2
+
+### Misc.
+* Bump release version for multi-arch support. 
+
+# v1.3.1
+
+## Notable changes
+- efs-csi-driver now supports arm and image is multi-arch
+
+### Bug Fixes
+* Fixed the error message ([#487](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/487), [@pierluigilenoci](https://github.com/pierluigilenoci))
+
+### Misc.
+* Clean up unnecessary resources after installation in docker file ([#483](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/483), [@kbasv](https://github.com/kbasv))
+* Remove platform hardcode for golang in Dockerfile ([#485](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/485), [@kbasv](https://github.com/kbasv))
+* Update cross account mount example with specs and add missing setup step ([#488](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/488), [@kbasv](https://github.com/kbasv))
+
+# v1.3
+
+## Notable changes
+- efs-csi-driver now supports cross account and cross `az` mount
+- Helm chart clean up
+
+### New Features
+* Add support for cross account mount ([#470](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/470), [@kbasv](https://github.com/kbasv))
+* Helm chart: make more fields configurable for the deployment, daemonset and storage class ([#406](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/406), [@Misteur-Z](https://github.com/Misteur-Z))
+* Add x-AZ mount support for efs-csi-driver ([#425](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/425), [@kbasv](https://github.com/kbasv))
+
+### Bug Fixes
+* Fix helm chart external-provisioner RBAC not being created if serviceaccount.controller.create false ([#386](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/386), [@wongma7](https://github.com/wongma7))
+* Fix creation of multiple storage classes in Helm chart ([#388](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/388), [@NilsGriebner](https://github.com/NilsGriebner))
+* Fix verify command ([#424](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/424), [@buptliuwei](https://github.com/buptliuwei))
+* Helm chart: fix reclaimPolicy and volumeBindingMode ([#464](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/464), [@devinsmith911](https://github.com/devinsmith911))
+* Put comments back in place inside the values file ([#475](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/475), [@pierluigilenoci](https://github.com/pierluigilenoci))
+
+### Improvements
+* feat: add helm config to enable deleteAccessPointRootDir ([#412](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/412), [@KarstenSiemer](https://github.com/KarstenSiemer))
+* feat: add controller access point tags to helm chart ([#413](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/413), [@KarstenSiemer](https://github.com/KarstenSiemer))
+* feat: helm add storageclass annotations ([#414](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/414), [@KarstenSiemer](https://github.com/KarstenSiemer))
+* Add fargate support in the EFS CSI driver ([#418](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/418), [@anonymint](https://github.com/anonymint))
+* Install efs-utils from github ([#442](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/442), [@kbasv](https://github.com/kbasv))
+* Update access point root directory name to use PV name ([#448](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/448), [@kbasv](https://github.com/kbasv))
+
+### Misc.
+* Add documentation and examples for cross-account mount ([#477](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/477), [@kbasv](https://github.com/kbasv))
+* Add `hostNetwork: true` on efs-csi-controller deployement. ([#380](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/380), [@jihed](https://github.com/jihed))
+* Bump sidecar images to latest available in ecr ([#382](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/382), [@wongma7](https://github.com/wongma7))
+* Add `iam` mount option while deleting Access Point root directory ([#422](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/422), [@kbasv](https://github.com/kbasv))
+* Add empty StorageClasses from static example ([#423](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/423), [@Yu-HaoYu](https://github.com/Yu-HaoYu))
+* Reduce default log level to 2 ([#426](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/426), [@wongma7](https://github.com/wongma7))
+* Create a new AWS session with the region ([#435](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/435), [@bodgit](https://github.com/bodgit))
+* Change controller port 9808->9909 to avoid node/ebs conflict ([#437](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/437), [@wongma7](https://github.com/wongma7))
+* Add kbasv as approver ([#447](https://github.com/kubernetes-sigs/aws-efs-csi-driver/pull/447), [@kbasv](https://github.com/kbasv))
+
+
 # v1.2.1
 
 ### Bug fixes
